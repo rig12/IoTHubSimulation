@@ -48,8 +48,8 @@ namespace SimulatedDevice
                 for (int i = 0; i < 4; i++)
 
                 {
-                    double currentProductivity = 0;
-                    int currentState = -1;// minState + rand.Next(2);
+                    var currentProductivity = 0D;
+                    var currentState = string.Empty;// minState + rand.Next(2);
 
                     string infoString;
                     string productivityValue;
@@ -61,22 +61,22 @@ namespace SimulatedDevice
                         {
                             productivityValue = "low";
                             infoString = "Maker low productivity.";
-                            currentState = 1;
+                            currentState = "run";
                             currentProductivity = rand.NextDouble() * 11;
                         }
                         else
                         {
                             productivityValue = "stopped";
                             infoString = "Maker was stopped";
-                            currentState = 0;
+                            currentState = "idle";
                             
                         }
                     }
                     else
                     {
                         productivityValue = "normal";
-                        infoString = "This is a normal message.";
-                        currentState = 2;
+                        infoString = "Normal productivity";
+                        currentState = "run";
                         currentProductivity = rand.NextDouble() * 30;
                     }
 
