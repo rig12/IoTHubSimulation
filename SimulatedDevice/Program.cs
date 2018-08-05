@@ -5,6 +5,7 @@ using Microsoft.Azure.Devices.Client;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -21,6 +22,8 @@ namespace SimulatedDevice
             {"Maker3","rDi3DVcvrm1rOgJTY+z4gKLbUKd9XwNISN4u7L4iWkw=" },
             {"Maker4","nb0Ye3fGF6uqvUVlPcIdVix84dak/ix4AkpuRTyMSHk=" }
         };
+
+        static int[] previousStates = { -1, -1, -1, -1 };
 
         private static IList<DeviceClient> deviceclients = Enumerable.Empty<DeviceClient>().ToList();
         //private readonly static string s_myDeviceId = "CSharpSimulateDevice";
@@ -43,7 +46,7 @@ namespace SimulatedDevice
 
         private static async void SendDeviceToCloudMessagesAsync()
         {
-            
+
             Random rand = new Random();
 
             while (true)
@@ -51,48 +54,54 @@ namespace SimulatedDevice
                 for (int i = 0; i < 4; i++)
 
                 {
-                    var currentProductivity = rand.NextDouble() * 30;
+                    double currentProductivity = 0;
                     int currentState = -1;// minState + rand.Next(2);
-                    int previousState = 0;
 
                     string infoString;
                     string productivityValue;
 
-                    do
+                    var k = rand.NextDouble();
+                    if (k > 0.7)
                     {
-                        if (rand.NextDouble() > 0.7)
+                        if (rand.NextDouble() > 0.5)
                         {
-                            if (rand.NextDouble() > 0.5)
-                            {
-                                productivityValue = "low";
-                                infoString = "Maker low productivity.";
-                                currentState = 1;
-                            }
-                            else
-                            {
-                                productivityValue = "stopped";
-                                infoString = "Maker was stopped";
-                                currentState = 0;
-                            }
+                            productivityValue = "low";
+                            infoString = "Maker low productivity.";
+                            currentState = 1;
+                            currentProductivity = rand.NextDouble() * 30;
                         }
                         else
                         {
-                            productivityValue = "normal";
-                            infoString = "This is a normal message.";
-                            currentState = 2;
+                            productivityValue = "stopped";
+                            infoString = "Maker was stopped";
+                            currentState = 0;
+                            currentProductivity = rand.NextDouble() * 11;
                         }
                     }
-                    while (previousState == currentState);
-
-                    var telemetryDataPoint = new
+                    else
                     {
-                        deviceId = devicekeys.Keys.ToArray()[i],
-                        productivity = productivityValue == "stopped" ? 0 : currentProductivity,
-                        reason = productivityValue == "stopped" ? rand.Next(11) + 1 : -1,
-                        state = currentState,
-                        pointInfo = infoString,
-                        EventTime = DateTime.Now
-                    };
+                        productivityValue = "normal";
+                        infoString = "This is a normal message.";
+                        currentState = 2;
+                    }
+
+                    dynamic telemetryDataPoint = new ExpandoObject();
+                    telemetryDataPoint.deviceId = devicekeys.Keys.ToArray()[i];
+
+                    telemetryDataPoint.pointInfo = infoString;
+                    telemetryDataPoint.EventTime = DateTime.Now;
+
+                    if (previousStates[i] != currentState)
+                    {
+                        telemetryDataPoint.state = currentState;
+                        if (currentState > 0) telemetryDataPoint.productivity = currentProductivity;
+                    }
+                    else
+                        telemetryDataPoint.productivity = currentProductivity;
+
+
+                    if (((IDictionary<String, Object>)telemetryDataPoint).ContainsKey("state") && telemetryDataPoint.state == 0)
+                        telemetryDataPoint.reason = rand.Next(11) + 1;
 
                     var telemetryDataString = JsonConvert.SerializeObject(telemetryDataPoint);
 
@@ -103,7 +112,7 @@ namespace SimulatedDevice
                     //    message.Properties.Add("reason", rand.Next(11).ToString());
                     await deviceclients.ToArray()[i].SendEventAsync(message);
                     Console.WriteLine("{0} > Sent message: {1}", DateTime.Now, telemetryDataString);
-                    previousState = currentState;
+                    previousStates[i] = currentState;
                     await Task.Delay(1000);
                 }
                 await Task.Delay(10000);
