@@ -15,19 +15,13 @@ namespace SimulatedDevice
     class Program
     {
         //private static DeviceClient s_deviceClient;
-        private static IDictionary<string, string> devicekeys = new Dictionary<string, string>()
-        {
-            {"Maker1","mYZX4/bKTxKzk3pOgx42S4Ly9qSENgkaK7EwD/IfX70=" },
-            {"Maker2","O4/VyeYcNuUvc+pmdp+lYlr0xlqw17VfPrQNx+B3/Wc=" },
-            {"Maker3","rDi3DVcvrm1rOgJTY+z4gKLbUKd9XwNISN4u7L4iWkw=" },
-            {"Maker4","nb0Ye3fGF6uqvUVlPcIdVix84dak/ix4AkpuRTyMSHk=" }
-        };
+        
+
 
         static int[] previousStates = { -1, -1, -1, -1 };
 
         private static IList<DeviceClient> deviceclients = Enumerable.Empty<DeviceClient>().ToList();
-        //private readonly static string s_myDeviceId = "CSharpSimulateDevice";
-        private readonly static string s_iotHubUri = "TobaccoIoTHub.azure-devices.net";
+
         // This is the primary key for the device. This is in the portal. 
         // Find your IoT hub in the portal > IoT devices > select your device > copy the key. 
         //private readonly static string s_deviceKey = "rxO7i9u7ccHMPfBGshWslMPFuonNYOCGQWpv9fEuC5c=";
@@ -35,9 +29,9 @@ namespace SimulatedDevice
         private static void Main(string[] args)
         {
             Console.WriteLine("Routing Tutorial: Simulated tobacco maker device\n");
-            foreach (var key in devicekeys.Keys)
-                if (devicekeys.TryGetValue(key, out var devicekey))
-                    deviceclients.Add(DeviceClient.Create(s_iotHubUri, new DeviceAuthenticationWithRegistrySymmetricKey(key, devicekey), TransportType.Mqtt));
+            foreach (var key in MakersData.devicekeys.Keys)
+                if (MakersData.devicekeys.TryGetValue(key, out var devicekey))
+                    deviceclients.Add(DeviceClient.Create(MakersData.s_iotHubUri, new DeviceAuthenticationWithRegistrySymmetricKey(key, devicekey), TransportType.Mqtt));
             //s_deviceClient = DeviceClient.Create(s_iotHubUri, new DeviceAuthenticationWithRegistrySymmetricKey(s_myDeviceId, s_deviceKey), TransportType.Mqtt);
             SendDeviceToCloudMessagesAsync();
             Console.WriteLine("Press the Enter key to stop.");
@@ -68,14 +62,14 @@ namespace SimulatedDevice
                             productivityValue = "low";
                             infoString = "Maker low productivity.";
                             currentState = 1;
-                            currentProductivity = rand.NextDouble() * 30;
+                            currentProductivity = rand.NextDouble() * 11;
                         }
                         else
                         {
                             productivityValue = "stopped";
                             infoString = "Maker was stopped";
                             currentState = 0;
-                            currentProductivity = rand.NextDouble() * 11;
+                            
                         }
                     }
                     else
@@ -83,13 +77,17 @@ namespace SimulatedDevice
                         productivityValue = "normal";
                         infoString = "This is a normal message.";
                         currentState = 2;
+                        currentProductivity = rand.NextDouble() * 30;
                     }
 
                     dynamic telemetryDataPoint = new ExpandoObject();
-                    telemetryDataPoint.deviceId = devicekeys.Keys.ToArray()[i];
-
+                    telemetryDataPoint.deviceId = MakersData.devicekeys.Keys.ToArray()[i];
+                    
                     telemetryDataPoint.pointInfo = infoString;
                     telemetryDataPoint.EventTime = DateTime.Now;
+                    telemetryDataPoint.productivity = 0;
+                    telemetryDataPoint.state = -1;
+                    telemetryDataPoint.reason = -1;
 
                     if (previousStates[i] != currentState)
                     {
@@ -97,11 +95,12 @@ namespace SimulatedDevice
                         if (currentState > 0) telemetryDataPoint.productivity = currentProductivity;
                     }
                     else
+                        if (previousStates[i] > 0)
                         telemetryDataPoint.productivity = currentProductivity;
 
 
                     if (((IDictionary<String, Object>)telemetryDataPoint).ContainsKey("state") && telemetryDataPoint.state == 0)
-                        telemetryDataPoint.reason = rand.Next(11) + 1;
+                        telemetryDataPoint.reason = MakersData.reasons[rand.Next(MakersData.reasons.Count())];
 
                     var telemetryDataString = JsonConvert.SerializeObject(telemetryDataPoint);
 
