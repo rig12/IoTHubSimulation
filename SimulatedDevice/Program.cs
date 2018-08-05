@@ -53,31 +53,36 @@ namespace SimulatedDevice
                 {
                     var currentProductivity = rand.NextDouble() * 30;
                     int currentState = -1;// minState + rand.Next(2);
+                    int previousState = 0;
 
                     string infoString;
                     string productivityValue;
 
-                    if (rand.NextDouble() > 0.7)
+                    do
                     {
-                        if (rand.NextDouble() > 0.5)
+                        if (rand.NextDouble() > 0.7)
                         {
-                            productivityValue = "low";
-                            infoString = "Maker low productivity.";
-                            currentState = 1;
+                            if (rand.NextDouble() > 0.5)
+                            {
+                                productivityValue = "low";
+                                infoString = "Maker low productivity.";
+                                currentState = 1;
+                            }
+                            else
+                            {
+                                productivityValue = "stopped";
+                                infoString = "Maker was stopped";
+                                currentState = 0;
+                            }
                         }
                         else
                         {
-                            productivityValue = "stopped";
-                            infoString = "Maker was stopped";
-                            currentState = 0;
+                            productivityValue = "normal";
+                            infoString = "This is a normal message.";
+                            currentState = 2;
                         }
                     }
-                    else
-                    {
-                        productivityValue = "normal";
-                        infoString = "This is a normal message.";
-                        currentState = 2;
-                    }
+                    while (previousState == currentState);
 
                     var telemetryDataPoint = new
                     {
@@ -98,7 +103,7 @@ namespace SimulatedDevice
                     //    message.Properties.Add("reason", rand.Next(11).ToString());
                     await deviceclients.ToArray()[i].SendEventAsync(message);
                     Console.WriteLine("{0} > Sent message: {1}", DateTime.Now, telemetryDataString);
-
+                    previousState = currentState;
                     await Task.Delay(1000);
                 }
                 await Task.Delay(10000);
