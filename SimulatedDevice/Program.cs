@@ -40,6 +40,7 @@ namespace SimulatedDevice
             Console.WriteLine("Press the Enter key to stop.");
             Console.ReadLine();
         }
+
         private static async void SendDeviceToCloudMessagesAsync()
         {
             var minProductivity = 0;
