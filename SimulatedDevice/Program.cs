@@ -43,8 +43,7 @@ namespace SimulatedDevice
 
         private static async void SendDeviceToCloudMessagesAsync()
         {
-            var minProductivity = 0;
-            var minState = 0;
+            
             Random rand = new Random();
 
             while (true)
@@ -52,7 +51,7 @@ namespace SimulatedDevice
                 for (int i = 0; i < 4; i++)
 
                 {
-                    var currentProductivity = minProductivity + rand.NextDouble() * 30;
+                    var currentProductivity = rand.NextDouble() * 30;
                     int currentState = -1;// minState + rand.Next(2);
 
                     string infoString;
